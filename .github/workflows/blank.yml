@@ -17,7 +17,7 @@ jobs:
 
     strategy:
       matrix:
-        server_path: 1-Microcontrollers
+        server_path: [1-Microcontrollers]
         target: 
           - N32G003xx_V1.0.2
           - N32G030xx_V2.2.0
@@ -42,4 +42,4 @@ jobs:
     - name: ${{ matrix.server_path }}/${{ matrix.target }}
       run: |
         echo "$FTP_USERNAME@$FTP_PASSWORD:$FTP_SERVER/${{ matrix.server_path }}/${{ matrix.target }}"
-  
+    
