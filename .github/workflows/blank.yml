@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  FTP_SERVER: download.nationstech.com
+  FTP_SERVER: ftp://download.nationstech.com
   FTP_USERNAME: anonymous
   FTP_PASSWORD: anonymous
 
@@ -40,20 +40,41 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: NationsTechCoreLib/${{ matrix.target }}
-        token: ${{ secrets.ACCESS_TOKEN }}
-    - name: Run
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: 
       run: |
-        ls
+        # Get latest zip file name
+        remote_zip_name=$(ftp -n $FTP_SERVER <<END_SCRIPT
+        quote USER $FTP_USERNAME
+        quote PASS $FTP_PASSWORD
+        nlist ${{ matrix.server_path }}/${{ matrix.target }}* 
+        quit
+        END_SCRIPT
+        )
+        # Get file last update time
+        remote_zip_size=$(ftp -n $FTP_SERVER <<END_SCRIPT
+        quote USER $FTP_USERNAME
+        quote PASS $FTP_PASSWORD
+        size ${{ matrix.server_path }}/$remote_zip_name
+        quit
+        END_SCRIPT
+        )
+
+        remote_zip_size=$(echo $remote_zip_size | awk '{print $2}')
+
+        echo "remote file: ${{ matrix.server_path }}/$remote_zip_name"
+        echo "remote file size: $remote_zip_size"
+
     - name: Commit files
       run: |
         git config --local user.email "bot@github.com"
         git config --local user.name "bot-action"
-        date +%s > new-report.txt
+        touch ./test
         git add .
         git commit -a -m "Test "
     - name: Push changes
       uses: ad-m/github-push-action@master
       with:
-        github_token: ${{ secrets.ACCESS_TOKEN }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
         repository: NationsTechCoreLib/${{ matrix.target }}
         force_with_lease: true
