@@ -43,6 +43,8 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: 
       run: |
+        remote_zip_name="test"
+        echo $remote_zip_name
         # Get latest zip file name
         remote_zip_name=$(ftp -n $FTP_SERVER <<END_SCRIPT
         quote USER $FTP_USERNAME
