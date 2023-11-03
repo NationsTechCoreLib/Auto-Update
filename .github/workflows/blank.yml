@@ -1,9 +1,9 @@
 name: NationsTech-SDK-Update
 
-# on:
-#   schedule:
-#     - cron: "0 2 * * 1-5"
-#   workflow_dispatch:
+on:
+  # schedule:
+  #   - cron: "0 2 * * 1-5"
+  workflow_dispatch:
 
 env:
   FTP_SERVER: download.nationstech.com
