@@ -40,7 +40,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: NationsTechCoreLib/${{ matrix.target }}
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.ACCESS_TOKEN }}
     - name: Run
       run: |
         ls
@@ -48,12 +48,12 @@ jobs:
       run: |
         git config --local user.email "bot@github.com"
         git config --local user.name "bot-action"
-        touch ./test
+        date +%s > new-report.txt
         git add .
         git commit -a -m "Test "
     - name: Push changes
       uses: ad-m/github-push-action@master
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.ACCESS_TOKEN }}
         repository: NationsTechCoreLib/${{ matrix.target }}
         force_with_lease: true
