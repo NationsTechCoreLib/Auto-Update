@@ -44,3 +44,15 @@ jobs:
     - name: Run
       run: |
         ls
+    - name: Commit files
+      run: |
+        git config --local user.email "bot@github.com"
+        git config --local user.name "bot-action"
+        touch ./test
+        git commit -a -m "Test "
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        repository: NationsTechCoreLib/${{ matrix.target }}
+        force_with_lease: true
