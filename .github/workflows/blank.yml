@@ -1,9 +1,9 @@
 name: NationsTech-SDK-Update
 
-on:
-  schedule:
-    - cron: "0 2 * * 1-5"
-  workflow_dispatch:
+# on:
+#   schedule:
+#     - cron: "0 2 * * 1-5"
+#   workflow_dispatch:
 
 env:
   FTP_SERVER: download.nationstech.com
@@ -19,27 +19,24 @@ jobs:
       matrix:
         server_path: [1-Microcontrollers]
         target: 
-          - N32G003xx_V1.0.2
-          - N32G030xx_V2.2.0
-          - N32G031xx_V2.2.0
-          - N32G032xx_V2.3.0
-          - N32G0V1_V1.1
-          - N32G401xx_V1.0.0
-          - N32G430xx_V1.3.0
-          - N32G432xx_V2.2.0
-          - N32G435xx_V2.2.0
-          - N32G451xx_V3.1.0
-          - N32G452xx_V3.1.0
-          - N32G455xx_V3.1.0
-          - N32G457xx_V3.1.0
-          - N32G4FR_V3.1.0
-          - N32L40xxx_V2.2.0
-          - N32L43xxx_V2.2.0
+          - N32G003xx
+          - N32G030xx
+          - N32G031xx
+          - N32G032xx
+          - N32G0V1
+          - N32G401xx
+          - N32G430xx
+          - N32G432xx
+          - N32G435xx
+          - N32G451xx
+          - N32G452xx
+          - N32G455xx
+          - N32G457xx
+          - N32G4FR
+          - N32L40xxx
+          - N32L43xxx
     steps:
-    - name: Get latest code
+    - name: Checkout ${{ matrix.target }}
       uses: actions/checkout@v3
-
-    - name: ${{ matrix.server_path }}/${{ matrix.target }}
-      run: |
-        echo "$FTP_USERNAME@$FTP_PASSWORD:$FTP_SERVER/${{ matrix.server_path }}/${{ matrix.target }}"
-    
+      with:
+        repository: NationsTechCoreLib/${{ matrix.target }}
