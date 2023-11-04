@@ -43,40 +43,103 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: 
       run: |
-        remote_zip_name="test"
-        echo $remote_zip_name
-        # Get latest zip file name
-        remote_zip_name=$(ftp -n $FTP_SERVER <<END_SCRIPT
+        # Get latest file
+        ret=$(ftp -n $FTP_SERVER <<END_SCRIPT
         quote USER $FTP_USERNAME
         quote PASS $FTP_PASSWORD
-        nlist ${{ matrix.server_path }}/${{ matrix.target }}* 
+        ls ${{ matrix.server_path }}/${{ matrix.target }}*
         quit
         END_SCRIPT
         )
-        # Get file last update time
-        remote_zip_size=$(ftp -n $FTP_SERVER <<END_SCRIPT
+        remote_file=${{ matrix.server_path }}/$(echo "$ret" | awk '{print $9}')
+        remote_size=$(echo "$ret" | awk '{print $5}')
+        remote_rev=$(echo "$remote_file" | sed 's/.*_\([V|v][0-9.]*\)\.zip/\1/')
+
+        # Get latest update time
+        ret=$(ftp -n $FTP_SERVER <<END_SCRIPT
         quote USER $FTP_USERNAME
         quote PASS $FTP_PASSWORD
-        size ${{ matrix.server_path }}/$remote_zip_name
+        MDTM $remote_file
         quit
         END_SCRIPT
         )
+        remote_modified=$(echo "$ret" | awk '{print $2}')
 
-        remote_zip_size=$(echo $remote_zip_size | awk '{print $2}')
+        if [ ! -f ./.version ]; then
+            touch ./.version
+        fi
+        # Check .version
+        git_version=$(<./.version)
+        remote_version="file: $remote_file
+        size: $remote_size
+        date: $remote_modified"
+        if [[ "$git_version" == "$remote_version" ]]; then
+            echo "No update needed"
+            exit 0
+        fi
+        echo "$remote_version" > ./.version
 
-        echo "remote file: ${{ matrix.server_path }}/$remote_zip_name"
-        echo "remote file size: $remote_zip_size"
+        # TODO Download
+        curl --user "$FTP_USERNAME:$FTP_PASSWORD" -o /tmp/sdk.zip "$FTP_SERVER/$remote_file"
+        if [ $? -ne 0 ]; then
+            echo "Failed to download file. Exit $?"
+            exit $?
+        fi
 
-    - name: Commit files
-      run: |
-        git config --local user.email "bot@github.com"
-        git config --local user.name "bot-action"
-        touch ./test
-        git add .
-        git commit -a -m "Test "
+        # Extract zip
+        mkdir /tmp/nationstech
+        unzip -o /tmp/sdk.zip '*/6-Software Development Kit/Nations.*_Library*/*' -d /tmp/nationstech
+        if [ $? -ne 0 ]; then
+            echo "Failed to extract file. Exit $?"
+            exit $?
+        fi
+
+        # Convert file to utf-8
+        find /tmp/nationstech -type f \( -name "*.h" -o -name "*.c" -o -name "*.S" -o -name "*.s"  -o -name "*.txt" \) | while read file; do
+            encoding=$(file -bi "$file" | awk -F= '{print $2}')
+            if [[ "$encoding" == "us-ascii" ]]; then
+                continue
+            elif [[ "$encoding" != "utf-8" ]]; then
+                echo "Converting $file to UTF-8"
+                iconv -f $encoding -t UTF-8 "$file" -o "$file"
+                if [ $? -ne 0 ]; then
+                    echo "Failed to convert. Exit $?"
+                    exit $?
+                fi
+            fi
+        done
+
+        # Copy files
+        cp -R -u /tmp/nationstech/6-Software\ Development\ Kit/Nations.*_Library*/* ./
+        if [ $? -ne 0 ]; then
+            echo "Failed to copy files. Exit $?"
+            exit $?
+        fi
+
+        # Configure git user
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+        # Check file has changes
+        if `git status | grep -q "nothing to commit"`; then
+            echo "No any changes, skipped."
+            exit 0
+        fi
+
+        git add -A
+        if [ $? -ne 0 ]; then
+            echo "Failed to track files. Exit $?"
+            exit $?
+        fi
+
+        git commit -am "Synchronize upstream updates to $remote_rev" --tag $remote_rev
+        if [ $? -ne 0 ]; then
+            echo "Failed to commit. Exit $?"
+            exit $?
+        fi
     - name: Push changes
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         repository: NationsTechCoreLib/${{ matrix.target }}
-        force_with_lease: true
+        tags: true
