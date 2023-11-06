@@ -41,7 +41,7 @@ jobs:
       with:
         repository: NationsTechCoreLib/${{ matrix.target }}
         token: ${{ secrets.GITHUB_TOKEN }}
-    - name: 
+    - name: Check and update
       run: |
         # Get Remote file info
         echo "Get remote file info"
@@ -141,8 +141,10 @@ jobs:
             exit $?
         fi
         echo "Push"
-        git push origin $remote_rev
+        git push --atomic origin main $remote_rev
         if [ $? -ne 0 ]; then
             echo "Failed to push code. Exit $?"
             exit $?
         fi
+        echo "Done."
+        exit 0
