@@ -41,7 +41,7 @@ jobs:
       with:
         repository: NationsTechCoreLib/${{ matrix.target }}
         token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Check and update
+    - name: 
       run: |
         # Get Remote file info
         echo "Get remote file info"
@@ -138,12 +138,6 @@ jobs:
         git commit -am "Synchronize upstream updates to $remote_rev"
         if [ $? -ne 0 ]; then
             echo "Failed to commit. Exit $?"
-            exit $?
-        fi
-        echo "Login with PAT"
-        git remote add origin https://${{ secrets.GITHUB_TOKEN }}@github.com/NationsTechCoreLib/${{ matrix.target }}
-        if [ $? -ne 0 ]; then
-            echo "Failed to add remote origin. Exit $?"
             exit $?
         fi
         echo "Push"
