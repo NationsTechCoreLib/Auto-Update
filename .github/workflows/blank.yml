@@ -57,7 +57,7 @@ jobs:
         remote_size=$(echo $ret | grep -oP 'size=\K\d+')
         remote_modify=$(echo $ret | grep -oP 'modify=\K\d+')
 
-        echo -e "Remote file: $remote_file\nRemote file size: $remote_file\nRemote file last modify: $remote_modify"
+        echo -e "Remote file: $remote_file\nRemote file size: $remote_size\nRemote file last modify: $remote_modify"
 
         # Check .version
         if [ ! -f ./.version ]; then
