@@ -49,6 +49,7 @@ jobs:
         quote USER $FTP_USERNAME
         quote PASS $FTP_PASSWORD
         mlsd ${{ matrix.server_path }}/${{ matrix.target }}_*
+        abor
         quit
         END_SCRIPT
         )
