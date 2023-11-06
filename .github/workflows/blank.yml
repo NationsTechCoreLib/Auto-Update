@@ -141,11 +141,16 @@ jobs:
             exit $?
         fi
         git tag $remote_rev
-        echo "Push"
-        git push origin $remote_rev
-        if [ $? -ne 0 ]; then
-            echo "Failed to push code. Exit $?"
-            exit $?
-        fi
-        echo "Done."
-        exit 0
+        # echo "Push"
+        # git push origin $remote_rev
+        # if [ $? -ne 0 ]; then
+        #     echo "Failed to push code. Exit $?"
+        #     exit $?
+        # fi
+        # echo "Done."
+        # exit 0
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        repository: NationsTechCoreLib/${{ matrix.target }}
