@@ -45,11 +45,10 @@ jobs:
       run: |
         # Get Remote file info
         echo "Get remote file info"
-        ret=$(ftp -n $FTP_SERVER <<END_SCRIPT
+        ret=$(ftp -n -p $FTP_SERVER <<END_SCRIPT
         quote USER $FTP_USERNAME
         quote PASS $FTP_PASSWORD
         mlsd ${{ matrix.server_path }}/${{ matrix.target }}_*
-        abor
         quit
         END_SCRIPT
         )
@@ -94,20 +93,20 @@ jobs:
         fi
 
         # Convert file to utf-8
-        echo "Convert file encoding"
-        find /tmp/nationstech -type f \( -name "*.h" -o -name "*.c" -o -name "*.S" -o -name "*.s"  -o -name "*.txt" \) | while read file; do
-            encoding=$(file -bi "$file" | awk -F= '{print $2}')
-            if [[ "$encoding" == "us-ascii" ]]; then
-                continue
-            elif [[ "$encoding" != "utf-8" ]]; then
-                echo "Converting $file to UTF-8"
-                iconv -f ISO-8859-1 -t UTF-8 "$file" -o "$file"
-                if [ $? -ne 0 ]; then
-                    echo "Failed to convert. Exit $?"
-                    exit $?
-                fi
-            fi
-        done
+        # echo "Convert file encoding"
+        # find /tmp/nationstech -type f \( -name "*.h" -o -name "*.c" -o -name "*.S" -o -name "*.s"  -o -name "*.txt" \) | while read file; do
+        #     encoding=$(file -bi "$file" | awk -F= '{print $2}')
+        #     if [[ "$encoding" == "us-ascii" ]]; then
+        #         continue
+        #     elif [[ "$encoding" != "utf-8" ]]; then
+        #         echo "Converting $file to UTF-8"
+        #         iconv -f ISO-8859-1 -t UTF-8 "$file" -o "$file"
+        #         if [ $? -ne 0 ]; then
+        #             echo "Failed to convert. Exit $?"
+        #             exit $?
+        #         fi
+        #     fi
+        # done
 
         # Copy files
         echo "Copy new code to repo"
