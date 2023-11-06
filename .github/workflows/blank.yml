@@ -1,145 +1,103 @@
-name: NationsTech-SDK-Update
+#!/bin/bash
 
-on:
-  # schedule:
-  #   - cron: "0 2 * * 1-5"
-  workflow_dispatch:
+FTP_SERVER=ftp://download.nationstech.com
+FTP_USERNAME=anonymous
+FTP_PASSWORD=anonymous
 
-env:
-  FTP_SERVER: ftp://download.nationstech.com
-  FTP_USERNAME: anonymous
-  FTP_PASSWORD: anonymous
+# Get Remote file info
+echo "Get remote file info"
+ret=$(ftp -n $FTP_SERVER <<END_SCRIPT
+quote USER $FTP_USERNAME
+quote PASS $FTP_PASSWORD
+mlsd ${{ matrix.server_path }}/${{ matrix.target }}_*
+quit
+END_SCRIPT
+)
 
-jobs:
-  general_mcu:
-    name: Sync general MCU SDK
-    runs-on: ubuntu-latest
+remote_file=${{ matrix.server_path }}/$(echo "$ret" | awk '{print $2}')
+remote_size=$(echo $ret | grep -oP 'size=\K\d+')
+remote_modify=$(echo $ret | grep -oP 'modify=\K\d+')
 
-    strategy:
-      matrix:
-        server_path: [1-Microcontrollers]
-        target: 
-          - N32G003xx
-          # - N32G030xx
-          # - N32G031xx
-          # - N32G032xx
-          # - N32G0V1
-          # - N32G401xx
-          # - N32G430xx
-          # - N32G432xx
-          # - N32G435xx
-          # - N32G451xx
-          # - N32G452xx
-          # - N32G455xx
-          # - N32G457xx
-          # - N32G4FR
-          # - N32L40xxx
-          # - N32L43xxx
-    steps:
-    - name: Checkout ${{ matrix.target }}
-      uses: actions/checkout@v4
-      with:
-        repository: NationsTechCoreLib/${{ matrix.target }}
-        token: ${{ secrets.GITHUB_TOKEN }}
-    - name: 
-      run: |
-        # Get latest file
-        ret=$(ftp -n $FTP_SERVER <<END_SCRIPT
-        quote USER $FTP_USERNAME
-        quote PASS $FTP_PASSWORD
-        ls ${{ matrix.server_path }}/${{ matrix.target }}*
-        quit
-        END_SCRIPT
-        )
-        remote_file=${{ matrix.server_path }}/$(echo "$ret" | awk '{print $9}')
-        remote_size=$(echo "$ret" | awk '{print $5}')
-        remote_rev=$(echo "$remote_file" | sed 's/.*_\([V|v][0-9.]*\)\.zip/\1/')
+echo -e "Remote file: $remote_file\nRemote file size: $remote_file\nRemote file last modify: $remote_modify"
 
-        # Get latest update time
-        ret=$(ftp -n $FTP_SERVER <<END_SCRIPT
-        quote USER $FTP_USERNAME
-        quote PASS $FTP_PASSWORD
-        MDTM $remote_file
-        quit
-        END_SCRIPT
-        )
-        remote_modified=$(echo "$ret" | awk '{print $2}')
+# Check .version
+if [ ! -f ./.version ]; then
+    touch ./.version
+fi
 
-        if [ ! -f ./.version ]; then
-            touch ./.version
-        fi
-        # Check .version
-        git_version=$(<./.version)
-        remote_version="file: $remote_file
-        size: $remote_size
-        date: $remote_modified"
-        if [[ "$git_version" == "$remote_version" ]]; then
-            echo "No update needed"
-            exit 0
-        fi
-        echo "$remote_version" > ./.version
+echo "Check repo .version"
+git_version=$(<./.version)
+remote_version="file: $remote_file
+size: $remote_size
+modify: $remote_modify"
+if [[ "$git_version" == "$remote_version" ]]; then
+    echo "No update needed"
+    exit 0
+fi
+echo "Write latest .version"
+echo "$remote_version" > ./.version
 
-        # TODO Download
-        curl --user "$FTP_USERNAME:$FTP_PASSWORD" -o /tmp/sdk.zip "$FTP_SERVER/$remote_file"
+echo "Download $FTP_SERVER/$remote_file to /tmp/sdk.zip"
+curl --user "$FTP_USERNAME:$FTP_PASSWORD" -o /tmp/sdk.zip "$FTP_SERVER/$remote_file"
+if [ $? -ne 0 ]; then
+    echo "Failed to download file. Exit $?"
+    exit $?
+fi
+
+# Extract zip
+echo "Extract /tmp/sdk.zip to /tmp/nationstech"
+mkdir /tmp/nationstech
+unzip -o /tmp/sdk.zip '*/6-Software Development Kit/Nations.*_Library*/*' -d /tmp/nationstech
+if [ $? -ne 0 ]; then
+    echo "Failed to extract file. Exit $?"
+    exit $?
+fi
+
+# Convert file to utf-8
+echo "Convert file encoding"
+find /tmp/nationstech -type f \( -name "*.h" -o -name "*.c" -o -name "*.S" -o -name "*.s"  -o -name "*.txt" \) | while read file; do
+    encoding=$(file -bi "$file" | awk -F= '{print $2}')
+    if [[ "$encoding" == "us-ascii" ]]; then
+        continue
+    elif [[ "$encoding" != "utf-8" ]]; then
+        echo "Converting $file to UTF-8"
+        iconv -f $encoding -t UTF-8 "$file" -o "$file"
         if [ $? -ne 0 ]; then
-            echo "Failed to download file. Exit $?"
+            echo "Failed to convert. Exit $?"
             exit $?
         fi
+    fi
+done
 
-        # Extract zip
-        mkdir /tmp/nationstech
-        unzip -o /tmp/sdk.zip '*/6-Software Development Kit/Nations.*_Library*/*' -d /tmp/nationstech
-        if [ $? -ne 0 ]; then
-            echo "Failed to extract file. Exit $?"
-            exit $?
-        fi
+# Copy files
+echo "Copy new code to repo"
+cp -R -u /tmp/nationstech/*/6-Software\ Development\ Kit/Nations.*_Library*/* ./
+if [ $? -ne 0 ]; then
+    echo "Failed to copy files. Exit $?"
+    exit $?
+fi
 
-        # Convert file to utf-8
-        find /tmp/nationstech -type f \( -name "*.h" -o -name "*.c" -o -name "*.S" -o -name "*.s"  -o -name "*.txt" \) | while read file; do
-            encoding=$(file -bi "$file" | awk -F= '{print $2}')
-            if [[ "$encoding" == "us-ascii" ]]; then
-                continue
-            elif [[ "$encoding" != "utf-8" ]]; then
-                echo "Converting $file to UTF-8"
-                iconv -f $encoding -t UTF-8 "$file" -o "$file"
-                if [ $? -ne 0 ]; then
-                    echo "Failed to convert. Exit $?"
-                    exit $?
-                fi
-            fi
-        done
+# Configure git user
+git config user.name "github-actions[bot]"
+git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-        # Copy files
-        cp -R -u /tmp/nationstech/6-Software\ Development\ Kit/Nations.*_Library*/* ./
-        if [ $? -ne 0 ]; then
-            echo "Failed to copy files. Exit $?"
-            exit $?
-        fi
+# Check file has changes
+echo "Check git status"
+if `git status | grep -q "nothing to commit"`; then
+    echo "No any changes, skipped."
+    exit 0
+fi
 
-        # Configure git user
-        git config user.name "github-actions[bot]"
-        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+echo "Add file track"
+git add -A
+if [ $? -ne 0 ]; then
+    echo "Failed to track files. Exit $?"
+    exit $?
+fi
 
-        # Check file has changes
-        if `git status | grep -q "nothing to commit"`; then
-            echo "No any changes, skipped."
-            exit 0
-        fi
-
-        git add -A
-        if [ $? -ne 0 ]; then
-            echo "Failed to track files. Exit $?"
-            exit $?
-        fi
-
-        git commit -am "Synchronize upstream updates to $remote_rev" --tag $remote_rev
-        if [ $? -ne 0 ]; then
-            echo "Failed to commit. Exit $?"
-            exit $?
-        fi
-    - name: Push changes
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        repository: NationsTechCoreLib/${{ matrix.target }}
-        tags: true
+echo "Commit"
+git commit -am "Synchronize upstream updates to $remote_rev" --tag $remote_rev
+if [ $? -ne 0 ]; then
+    echo "Failed to commit. Exit $?"
+    exit $?
+fi
