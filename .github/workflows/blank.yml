@@ -140,8 +140,15 @@ jobs:
             echo "Failed to commit. Exit $?"
             exit $?
         fi
+        echo "Push to origin main"
+        git push origin main
+        if [ $? -ne 0 ]; then
+            echo "Failed to push code. Exit $?"
+            exit $?
+        fi
+        
+        echo "Push tag $remote_rev"
         git tag $remote_rev
-        echo "Push"
         git push origin $remote_rev
         if [ $? -ne 0 ]; then
             echo "Failed to push code. Exit $?"
