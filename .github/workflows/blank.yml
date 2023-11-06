@@ -41,7 +41,7 @@ jobs:
       with:
         repository: NationsTechCoreLib/${{ matrix.target }}
         token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Check update
+    - name: Check and update
       run: |
         # Get Remote file info
         echo "Get remote file info"
@@ -133,16 +133,22 @@ jobs:
             echo "Failed to track files. Exit $?"
             exit $?
         fi
-
         echo "Commit"
-        git commit -am "Synchronize upstream updates to $remote_rev" --tag $remote_rev
+        remote_rev=$(echo "$ret" | awk '{print $2}' | sed 's/.*_\([V|v][0-9.]*\)\.zip/\1/')
+        git commit -am "Synchronize upstream updates to $remote_rev"
         if [ $? -ne 0 ]; then
             echo "Failed to commit. Exit $?"
             exit $?
         fi
-    - name: Push changes
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        repository: NationsTechCoreLib/${{ matrix.target }}
-        tags: true
+        echo "Login with PAT"
+        git remote add origin https://${{ secrets.GITHUB_TOKEN }}@github.com/NationsTechCoreLib/${{ matrix.target }}
+        if [ $? -ne 0 ]; then
+            echo "Failed to add remote origin. Exit $?"
+            exit $?
+        fi
+        echo "Push"
+        git push origin $remote_rev
+        if [ $? -ne 0 ]; then
+            echo "Failed to push code. Exit $?"
+            exit $?
+        fi
