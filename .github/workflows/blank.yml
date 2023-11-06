@@ -140,8 +140,9 @@ jobs:
             echo "Failed to commit. Exit $?"
             exit $?
         fi
+        git tag $remote_rev
         echo "Push"
-        git push --atomic origin main $remote_rev
+        git push origin $remote_rev
         if [ $? -ne 0 ]; then
             echo "Failed to push code. Exit $?"
             exit $?
