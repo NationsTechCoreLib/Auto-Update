@@ -168,7 +168,7 @@ jobs:
         echo "DO_RELEASE=yes" >> $GITHUB_ENV
     - name: Release
       uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/') && ${{ env.DO_RELEASE }} == 'yes'
+      if: startsWith(github.ref, 'refs/tags/') && ${{ env.DO_RELEASE == 'yes' }} 
       with:
         token: ${{ secrets.ACCESS_TOKEN }}
         repository: NationsTechCoreLib/${{ matrix.target }}
