@@ -54,12 +54,12 @@ jobs:
         )
         remote_filename=$(echo "$ret" | awk '{print $2}')
         remote_file=${{ matrix.server_path }}/$(echo "$ret" | awk '{print $2}')
-        remote_version=$(echo "$ret" | awk '{print $2}' | sed 's/.*_\([V|v][0-9.]*\)\.zip/\1/')
+        remote_tag=$(echo "$ret" | awk '{print $2}' | sed 's/.*_\([V|v][0-9.]*\)\.zip/\1/')
         remote_size=$(echo $ret | grep -oP 'size=\K\d+')
         remote_modify=$(echo $ret | grep -oP 'modify=\K\d+')
 
         echo "REMOTE_FILENAME=$remote_filename" >> $GITHUB_ENV
-        echo "REMOTE_VERSION=$remote_version" >> $GITHUB_ENV
+        echo "REMOTE_TAG=$remote_tag" >> $GITHUB_ENV
         echo "REMOTE_SIZE=$remote_size" >> $GITHUB_ENV
         echo "REMOTE_MODIFY=$remote_modify" >> $GITHUB_ENV
 
@@ -155,9 +155,9 @@ jobs:
             exit $?
         fi
         
-        echo "Push tag $remove_version"
-        git tag $remove_version
-        git push origin $remove_version
+        echo "Push tag $remote_tag"
+        git tag $remove_tag
+        git push origin $remote_tag
         if [ $? -ne 0 ]; then
             echo "Failed to push code. Exit $?"
             exit $?
@@ -168,12 +168,13 @@ jobs:
         echo "DO_RELEASE=yes" >> $GITHUB_ENV
     - name: Release
       uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/') && ${{ env.DO_RELEASE == 'yes' }} 
+      if: env.DO_RELEASE == 'yes'
       with:
         token: ${{ secrets.ACCESS_TOKEN }}
         repository: NationsTechCoreLib/${{ matrix.target }}
+        tag_name: refs/tags/${{ env.REMOTE_TAG }}
         files: /tmp/${{ REMOTE_FILENAME }}
-        name: SDK ${{ matrix.target }} ${{ env.REMOTE_VERSION }}
+        name: SDK ${{ env.REMOTE_TAG }}
         body: |
           File name: ${{ env.REMOTE_FILENAME }}  
           SHA-1: ${{ env.REMOTE_SHA1 }}
