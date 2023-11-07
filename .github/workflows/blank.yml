@@ -95,7 +95,7 @@ jobs:
         # Extract zip
         echo "Extract /tmp/$remote_filename to /tmp/nationstech"
         mkdir /tmp/nationstech
-        unzip -o /tmp/$remote_filename '*/6-Software Development Kit/Nations.*_Library*/*' -d /tmp/nationstech
+        unzip -o /tmp/$remote_filename '*/6-Software Development Kit/Nations*_Library*/*' -d /tmp/nationstech
         if [ $? -ne 0 ]; then
             echo "Failed to extract file. Exit $?"
             exit $?
