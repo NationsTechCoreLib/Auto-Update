@@ -25,10 +25,10 @@ jobs:
           - N32G032xx
           # - N32G401xx # need workaround
           # - N32G430xx # need workaround
-          # - N32G432xx
-          # - N32G435xx
-          # - N32G451xx
-          # - N32G452xx
+          - N32G432xx
+          - N32G435xx
+          - N32G451xx
+          - N32G452xx
           # - N32G455xx
           # - N32G457xx
           # - N32G4FR
