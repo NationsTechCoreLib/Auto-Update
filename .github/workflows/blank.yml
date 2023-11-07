@@ -52,10 +52,16 @@ jobs:
         quit
         END_SCRIPT
         )
-
+        remote_filename=$(echo "$ret" | awk '{print $2}')
         remote_file=${{ matrix.server_path }}/$(echo "$ret" | awk '{print $2}')
+        remote_version=$(echo "$ret" | awk '{print $2}' | sed 's/.*_\([V|v][0-9.]*\)\.zip/\1/')
         remote_size=$(echo $ret | grep -oP 'size=\K\d+')
         remote_modify=$(echo $ret | grep -oP 'modify=\K\d+')
+
+        echo "REMOTE_FILENAME=$remote_filename" >> $GITHUB_ENV
+        echo "REMOTE_VERSION=$remote_version" >> $GITHUB_ENV
+        echo "REMOTE_SIZE=$remote_size" >> $GITHUB_ENV
+        echo "REMOTE_MODIFY=$remote_modify" >> $GITHUB_ENV
 
         echo -e "Remote file: $remote_file\nRemote file size: $remote_size\nRemote file last modify: $remote_modify"
 
@@ -83,10 +89,13 @@ jobs:
             exit $?
         fi
 
+        # Calculate SHA-1
+        echo "REMOTE_SHA1=$(sha1sum /tmp/$remote_filename | awk '{print $1}')" >> $GITHUB_ENV
+        
         # Extract zip
-        echo "Extract /tmp/sdk.zip to /tmp/nationstech"
+        echo "Extract /tmp/$remote_filename to /tmp/nationstech"
         mkdir /tmp/nationstech
-        unzip -o /tmp/sdk.zip '*/6-Software Development Kit/Nations.*_Library*/*' -d /tmp/nationstech
+        unzip -o /tmp/remote_filename '*/6-Software Development Kit/Nations.*_Library*/*' -d /tmp/nationstech
         if [ $? -ne 0 ]; then
             echo "Failed to extract file. Exit $?"
             exit $?
@@ -134,8 +143,7 @@ jobs:
             exit $?
         fi
         echo "Commit"
-        remote_rev=$(echo "$ret" | awk '{print $2}' | sed 's/.*_\([V|v][0-9.]*\)\.zip/\1/')
-        git commit -am "Synchronize upstream updates to $remote_rev"
+        git commit -am "Synchronize upstream updates to $remove_version"
         if [ $? -ne 0 ]; then
             echo "Failed to commit. Exit $?"
             exit $?
@@ -147,12 +155,25 @@ jobs:
             exit $?
         fi
         
-        echo "Push tag $remote_rev"
-        git tag $remote_rev
-        git push origin $remote_rev
+        echo "Push tag $remove_version"
+        git tag $remove_version
+        git push origin $remove_version
         if [ $? -ne 0 ]; then
             echo "Failed to push code. Exit $?"
             exit $?
         fi
         echo "Done."
         exit 0
+
+        echo "DO_RELEASE=yes" >> $GITHUB_ENV
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/') && ${{ env.DO_RELEASE }} == 'yes'
+      with:
+        token: ${{ secrets.ACCESS_TOKEN }}
+        repository: NationsTechCoreLib/${{ matrix.target }}
+        files: /tmp/${{ REMOTE_FILENAME }}
+        name: SDK ${{ matrix.target }} ${{ env.REMOTE_VERSION }}
+        body: |
+          File name: ${{ env.REMOTE_FILENAME }}  
+          SHA-1: ${{ env.REMOTE_SHA1 }}
