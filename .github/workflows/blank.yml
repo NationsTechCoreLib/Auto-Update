@@ -57,10 +57,10 @@ jobs:
         remote_size=$(echo $ret | grep -oP 'size=\K\d+')
         remote_modify=$(echo $ret | grep -oP 'modify=\K\d+')
 
-        echo "REMOTE_FILENAME=$remote_filename" >> $GITHUB_ENV
-        echo "REMOTE_TAG=$remote_tag" >> $GITHUB_ENV
-        echo "REMOTE_SIZE=$remote_size" >> $GITHUB_ENV
-        echo "REMOTE_MODIFY=$remote_modify" >> $GITHUB_ENV
+        echo "REMOTE_FILENAME=$remote_filename" >> "$GITHUB_ENV"
+        echo "REMOTE_TAG=$remote_tag" >> "$GITHUB_ENV"
+        echo "REMOTE_SIZE=$remote_size" >> "$GITHUB_ENV"
+        echo "REMOTE_MODIFY=$remote_modify" >> "$GITHUB_ENV"
 
         echo -e "Remote file: $remote_file\nRemote file size: $remote_size\nRemote file last modify: $remote_modify"
 
@@ -89,7 +89,7 @@ jobs:
         fi
 
         # Calculate SHA-1
-        echo "REMOTE_SHA1=$(sha1sum /tmp/$remote_filename | awk '{print $1}')" >> $GITHUB_ENV
+        echo "REMOTE_SHA1=$(sha1sum /tmp/$remote_filename | awk '{print $1}')" >> "$GITHUB_ENV"
         
         # Extract zip
         echo "Extract /tmp/$remote_filename to /tmp/nationstech"
@@ -162,12 +162,11 @@ jobs:
             exit $?
         fi
         echo "Done."
+        echo "DO_RELEASE=yes" >> "$GITHUB_ENV"
         exit 0
-
-        echo "DO_RELEASE=yes" >> $GITHUB_ENV
     - name: Release
-      uses: softprops/action-gh-release@v1
       if: env.DO_RELEASE == 'yes'
+      uses: softprops/action-gh-release@v1
       with:
         token: ${{ secrets.ACCESS_TOKEN }}
         repository: NationsTechCoreLib/${{ matrix.target }}
