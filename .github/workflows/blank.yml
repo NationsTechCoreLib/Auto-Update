@@ -155,7 +155,7 @@ jobs:
         fi
         
         echo "Push tag $remote_tag"
-        git tag $remove_tag
+        git tag $remote_tag
         git push origin $remote_tag
         if [ $? -ne 0 ]; then
             echo "Failed to push code. Exit $?"
