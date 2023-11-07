@@ -20,12 +20,11 @@ jobs:
         server_path: [1-Microcontrollers]
         target: 
           # - N32G003xx
-          - N32G030xx
+          - N32G030xx 
           # - N32G031xx
           # - N32G032xx
-          # - N32G0V1
-          # - N32G401xx
-          # - N32G430xx
+          # - N32G401xx # need workaround
+          # - N32G430xx # need workaround
           # - N32G432xx
           # - N32G435xx
           # - N32G451xx
@@ -119,7 +118,7 @@ jobs:
 
         # Copy files
         echo "Copy new code to repo"
-        cp -R -u /tmp/nationstech/*/6-Software\ Development\ Kit/Nations.*_Library*/* ./
+        cp -R -u /tmp/nationstech/*/6-Software\ Development\ Kit/Nations*_Library*/* ./
         if [ $? -ne 0 ]; then
             echo "Failed to copy files. Exit $?"
             exit $?
