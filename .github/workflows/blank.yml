@@ -19,10 +19,10 @@ jobs:
       matrix:
         server_path: [1-Microcontrollers]
         target: 
-          # - N32G003xx
+          - N32G003xx
           - N32G030xx 
-          # - N32G031xx
-          # - N32G032xx
+          - N32G031xx
+          - N32G032xx
           # - N32G401xx # need workaround
           # - N32G430xx # need workaround
           # - N32G432xx
