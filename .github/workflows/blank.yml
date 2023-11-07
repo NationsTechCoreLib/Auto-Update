@@ -82,8 +82,8 @@ jobs:
         echo "Write latest .version"
         echo "$remote_version" > ./.version
 
-        echo "Download $FTP_SERVER/$remote_file to /tmp/sdk.zip"
-        curl --user "$FTP_USERNAME:$FTP_PASSWORD" -o /tmp/sdk.zip "$FTP_SERVER/$remote_file"
+        echo "Download $FTP_SERVER/$remote_file to /tmp/$remote_filename"
+        curl --user "$FTP_USERNAME:$FTP_PASSWORD" -o /tmp/$remote_filename "$FTP_SERVER/$remote_file"
         if [ $? -ne 0 ]; then
             echo "Failed to download file. Exit $?"
             exit $?
