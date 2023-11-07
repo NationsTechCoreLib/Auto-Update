@@ -173,7 +173,7 @@ jobs:
         token: ${{ secrets.ACCESS_TOKEN }}
         repository: NationsTechCoreLib/${{ matrix.target }}
         tag_name: refs/tags/${{ env.REMOTE_TAG }}
-        files: /tmp/${{ REMOTE_FILENAME }}
+        files: /tmp/${{ env.REMOTE_FILENAME }}
         name: SDK ${{ env.REMOTE_TAG }}
         body: |
           File name: ${{ env.REMOTE_FILENAME }}  
