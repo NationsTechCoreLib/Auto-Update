@@ -48,7 +48,7 @@ jobs:
         quote USER $FTP_USERNAME
         quote PASS $FTP_PASSWORD
         mlsd ${{ matrix.server_path }}/${{ matrix.target }}_*
-        quit
+        bye
         END_SCRIPT
         )
         remote_filename=$(echo "$ret" | awk '{print $2}')
