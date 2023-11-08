@@ -29,11 +29,11 @@ jobs:
           - N32G435xx
           - N32G451xx
           - N32G452xx
-          # - N32G455xx
-          # - N32G457xx
-          # - N32G4FR
-          # - N32L40xxx
-          # - N32L43xxx
+          - N32G455xx
+          - N32G457xx
+          - N32G4FR
+          - N32L40xxx
+          - N32L43xxx
     steps:
     - name: Checkout ${{ matrix.target }}
       uses: actions/checkout@v4
